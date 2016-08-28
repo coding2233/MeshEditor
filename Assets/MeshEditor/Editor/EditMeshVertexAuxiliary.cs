@@ -111,11 +111,11 @@ public class EditMeshVertexAuxiliary : EditorWindow
 
         #region 两点塌陷、多点塌陷
         EditorGUILayout.BeginHorizontal();
-        if (GUILayout.Button("两点重合"))
+        if (GUILayout.Button("两点塌陷"))
         {
             EditorApplication.delayCall += CollapseOnTwoVertex;
         }
-        if (GUILayout.Button("多点重合"))
+        if (GUILayout.Button("多点塌陷"))
         {
             EditorApplication.delayCall += CollapseOnMoreVertex;
         }
@@ -153,8 +153,7 @@ public class EditMeshVertexAuxiliary : EditorWindow
     void AddVertex()
     {
         #region 判断是否可以创建顶点
-        GameObject[] obj = Selection.gameObjects;
-        if (obj.Length != 2)
+        if (Selection.gameObjects.Length != 2)
         {
             EditorUtility.DisplayDialog("提示", "请选中两个存在直接连线的顶点，以在两个顶点之间创建新顶点！", "确定");
             return;
@@ -321,8 +320,7 @@ public class EditMeshVertexAuxiliary : EditorWindow
     void DeleteVertex()
     {
         #region 判断是否可以删除顶点
-        GameObject[] obj = Selection.gameObjects;
-        if (obj.Length != 1)
+        if (Selection.gameObjects.Length != 1)
         {
             EditorUtility.DisplayDialog("提示", "请选中一个顶点，以删除此顶点！", "确定");
             return;
@@ -368,6 +366,7 @@ public class EditMeshVertexAuxiliary : EditorWindow
         {
             editMeshVertexSenior._AllTriangleList.Remove(triangles[i]);
         }
+        SeObj1.GetComponent<VertexIdentity>()._Identity = -1;
         SeObj1.SetActive(false);
         #endregion
 
@@ -393,8 +392,7 @@ public class EditMeshVertexAuxiliary : EditorWindow
     void IntersectionDisplacement()
     {
         #region 判断是否可以执行
-        GameObject[] obj = Selection.gameObjects;
-        if (obj.Length != 2)
+        if (Selection.gameObjects.Length != 2)
         {
             EditorUtility.DisplayDialog("提示", "请选中两个游戏物体！", "确定");
             return;
@@ -431,8 +429,7 @@ public class EditMeshVertexAuxiliary : EditorWindow
     void MirrorDisplacement()
     {
         #region 判断是否可以执行
-        GameObject[] obj = Selection.gameObjects;
-        if (obj.Length != 2)
+        if (Selection.gameObjects.Length != 2)
         {
             EditorUtility.DisplayDialog("提示", "请选中两个游戏物体！", "确定");
             return;
@@ -465,24 +462,89 @@ public class EditMeshVertexAuxiliary : EditorWindow
     /// </summary>
     void CollapseOnTwoVertex()
     {
-        #region 判断是否可以执行
-        GameObject[] obj = Selection.gameObjects;
-        if (obj.Length != 2)
+        #region 判断是否可以塌陷
+        if (Selection.gameObjects.Length != 2)
         {
-            EditorUtility.DisplayDialog("提示", "请选中两个游戏物体！", "确定");
+            EditorUtility.DisplayDialog("提示", "请选中两个合法顶点！", "确定");
             return;
+        }
+        //记录选中的两个顶点物体
+        GameObject SeObj1 = Selection.gameObjects[0];
+        GameObject SeObj2 = Selection.gameObjects[1];
+        //获取操作的目标物体
+        if (SeObj1.transform.parent == null)
+        {
+            EditorUtility.DisplayDialog("提示", "未选中两个合法的顶点！", "确定");
+            return;
+        }
+        if (SeObj1.GetComponent<VertexIdentity>() == null || SeObj2.GetComponent<VertexIdentity>() == null
+            || SeObj1.GetComponent<VertexIdentity>()._Identity < 0 || SeObj2.GetComponent<VertexIdentity>()._Identity < 0
+             || SeObj1.GetComponent<VertexIdentity>()._Identity == SeObj2.GetComponent<VertexIdentity>()._Identity)
+        {
+            EditorUtility.DisplayDialog("提示", "未选中顶点或选中了不合法的顶点！", "确定");
+            return;
+        }
+
+        target = SeObj1.transform.parent.gameObject;
+        //获取目标物体的模型网格编辑器（高级）
+        editMeshVertexSenior = target.GetComponent<EditMeshVertexSenior>();
+        if (editMeshVertexSenior == null)
+        {
+            EditorUtility.DisplayDialog("提示", "意外的目标物体，该物体缺少模型网格编辑器（高级）！", "确定");
+            return;
+        }
+        targetClone = editMeshVertexSenior._target;
+        oldVertexSize = vertexSize = editMeshVertexSenior._VertexSize;
+        #endregion
+
+        #region 删除包含此两点的所有面
+        List<List<int>> triangles = new List<List<int>>();
+        triangles = IsContainOnTwoVertex(SeObj1, SeObj2);
+        if (triangles.Count > 0)
+        {
+            for (int i = 0; i < triangles.Count; i++)
+            {
+                editMeshVertexSenior._AllTriangleList.Remove(triangles[i]);
+            }
         }
         #endregion
 
-        #region 执行
-        //记录选中的两个物体
-        GameObject SeObj1 = Selection.gameObjects[0];
-        GameObject SeObj2 = Selection.gameObjects[1];
+        #region 将包含‘被塌陷点’的所有面数据更改为包含‘塌陷点’
+        List<int> vertexNumber = editMeshVertexSenior._AllVerticesGroupList[SeObj2.GetComponent<VertexIdentity>()._Identity];
+        int targetNumber = editMeshVertexSenior._AllVerticesGroupList[SeObj1.GetComponent<VertexIdentity>()._Identity][0];
+        triangles = IsContainOnOneVertex(SeObj2);
+        if (triangles.Count > 0)
+        {
+            for (int i = 0; i < triangles.Count; i++)
+            {
+                for (int j = 0; j < vertexNumber.Count; j++)
+                {
+                    int number = triangles[i].IndexOf(vertexNumber[j]);
+                    if (number >= 0)
+                    {
+                        triangles[i][number] = targetNumber;
+                    }
+                }
+            }
+        }
+        SeObj2.GetComponent<VertexIdentity>()._Identity = -1;
+        SeObj2.SetActive(false);
+        #endregion
 
-        Vector3 newPosition = SeObj1.transform.position;
-
-        SeObj2.transform.position = newPosition;
-        SeObj1.transform.position = newPosition;
+        #region 更新目标网格
+        int[] Alltriangles = new int[editMeshVertexSenior._AllTriangleList.Count * 3];
+        for (int i = 0; i < editMeshVertexSenior._AllTriangleList.Count; i++)
+        {
+            Alltriangles[i * 3] = editMeshVertexSenior._AllTriangleList[i][0];
+            Alltriangles[i * 3 + 1] = editMeshVertexSenior._AllTriangleList[i][1];
+            Alltriangles[i * 3 + 2] = editMeshVertexSenior._AllTriangleList[i][2];
+        }
+        editMeshVertexSenior._Mesh.Clear();
+        editMeshVertexSenior._Mesh.vertices = editMeshVertexSenior._AllVerticesList.ToArray();
+        editMeshVertexSenior._Mesh.triangles = Alltriangles;
+        editMeshVertexSenior._Mesh.RecalculateNormals();
+        editMeshVertexSenior._VertexNumber = editMeshVertexSenior._Vertices.Length;
+        Selection.activeGameObject = targetClone;
         #endregion
     }
     /// <summary>
@@ -490,21 +552,97 @@ public class EditMeshVertexAuxiliary : EditorWindow
     /// </summary>
     void CollapseOnMoreVertex()
     {
-        #region 判断是否可以执行
+        #region 判断是否可以塌陷
         GameObject[] obj = Selection.gameObjects;
-        if (obj.Length <= 1)
+        if (obj.Length <= 2)
         {
-            EditorUtility.DisplayDialog("提示", "请选中多个游戏物体！", "确定");
+            EditorUtility.DisplayDialog("提示", "请选中多个合法顶点！", "确定");
             return;
         }
         #endregion
 
-        #region 执行
-        Vector3 newPosition = obj[0].transform.position;
-
-        for(int i = 0;i < obj.Length;i++)
+        #region 轮番执行两点塌陷
+        for (int n = 1; n < obj.Length; n++)
         {
-            obj[i].transform.position = newPosition;
+            #region 判断是否可以塌陷
+            //记录两个顶点物体
+            GameObject SeObj1 = obj[0];
+            GameObject SeObj2 = obj[n];
+            //获取操作的目标物体
+            if (SeObj1.transform.parent == null)
+            {
+                EditorUtility.DisplayDialog("提示", "多个顶点中存在不合法的顶点！", "确定");
+                return;
+            }
+            if (SeObj1.GetComponent<VertexIdentity>() == null || SeObj2.GetComponent<VertexIdentity>() == null
+                || SeObj1.GetComponent<VertexIdentity>()._Identity < 0 || SeObj2.GetComponent<VertexIdentity>()._Identity < 0
+                 || SeObj1.GetComponent<VertexIdentity>()._Identity == SeObj2.GetComponent<VertexIdentity>()._Identity)
+            {
+                EditorUtility.DisplayDialog("提示", "多个顶点中存在不合法的顶点！", "确定");
+                return;
+            }
+
+            target = SeObj1.transform.parent.gameObject;
+            //获取目标物体的模型网格编辑器（高级）
+            editMeshVertexSenior = target.GetComponent<EditMeshVertexSenior>();
+            if (editMeshVertexSenior == null)
+            {
+                EditorUtility.DisplayDialog("提示", "意外的目标物体，该物体缺少模型网格编辑器（高级）！", "确定");
+                return;
+            }
+            targetClone = editMeshVertexSenior._target;
+            oldVertexSize = vertexSize = editMeshVertexSenior._VertexSize;
+            #endregion
+
+            #region 删除包含此两点的所有面
+            List<List<int>> triangles = new List<List<int>>();
+            triangles = IsContainOnTwoVertex(SeObj1, SeObj2);
+            if (triangles.Count > 0)
+            {
+                for (int i = 0; i < triangles.Count; i++)
+                {
+                    editMeshVertexSenior._AllTriangleList.Remove(triangles[i]);
+                }
+            }
+            #endregion
+
+            #region 将包含‘被塌陷点’的所有面数据更改为包含‘塌陷点’
+            List<int> vertexNumber = editMeshVertexSenior._AllVerticesGroupList[SeObj2.GetComponent<VertexIdentity>()._Identity];
+            int targetNumber = editMeshVertexSenior._AllVerticesGroupList[SeObj1.GetComponent<VertexIdentity>()._Identity][0];
+            triangles = IsContainOnOneVertex(SeObj2);
+            if (triangles.Count > 0)
+            {
+                for (int i = 0; i < triangles.Count; i++)
+                {
+                    for (int j = 0; j < vertexNumber.Count; j++)
+                    {
+                        int number = triangles[i].IndexOf(vertexNumber[j]);
+                        if (number >= 0)
+                        {
+                            triangles[i][number] = targetNumber;
+                        }
+                    }
+                }
+            }
+            SeObj2.GetComponent<VertexIdentity>()._Identity = -1;
+            SeObj2.SetActive(false);
+            #endregion
+
+            #region 更新目标网格
+            int[] Alltriangles = new int[editMeshVertexSenior._AllTriangleList.Count * 3];
+            for (int i = 0; i < editMeshVertexSenior._AllTriangleList.Count; i++)
+            {
+                Alltriangles[i * 3] = editMeshVertexSenior._AllTriangleList[i][0];
+                Alltriangles[i * 3 + 1] = editMeshVertexSenior._AllTriangleList[i][1];
+                Alltriangles[i * 3 + 2] = editMeshVertexSenior._AllTriangleList[i][2];
+            }
+            editMeshVertexSenior._Mesh.Clear();
+            editMeshVertexSenior._Mesh.vertices = editMeshVertexSenior._AllVerticesList.ToArray();
+            editMeshVertexSenior._Mesh.triangles = Alltriangles;
+            editMeshVertexSenior._Mesh.RecalculateNormals();
+            editMeshVertexSenior._VertexNumber = editMeshVertexSenior._Vertices.Length;
+            Selection.activeGameObject = targetClone;
+            #endregion
         }
         #endregion
     }
