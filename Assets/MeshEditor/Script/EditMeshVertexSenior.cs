@@ -13,7 +13,7 @@ public class EditMeshVertexSenior : MonoBehaviour{
     //注：编辑完成之后，移除此脚本，在场景运行前，最好确保此脚本不再存在于任一物体上
     #region 变量
     //顶点大小
-    [SerializeField,Header("顶点大小"), Range(0, 1)] public float _VertexSize = 0.05f;
+    [SerializeField,Header("顶点大小"), Range(0, 1)] public float _VertexSize = 0.03f;
     //顶点大小缓存
     [System.NonSerialized] public float _LastVertexSize;
     //顶点数量
@@ -41,7 +41,7 @@ public class EditMeshVertexSenior : MonoBehaviour{
     //目标物体所有三角面集合
     [System.NonSerialized] public List<List<int>> _AllTriangleList;
     //克隆体名称
-    [System.NonSerialized] public string _Name = "复制体";
+    [System.NonSerialized] public string _Name = "Clone Mesh";
     #endregion
 
     #region 函数
@@ -218,7 +218,8 @@ public class EditMeshVertexSenior : MonoBehaviour{
             {
                 for (int i = 0; i < _Vertices.Length; i++)
                 {
-                    _Vertices[i].transform.localScale = new Vector3(_VertexSize, _VertexSize, _VertexSize);
+                    float _NewSize = _VertexSize / 10.0f;
+                    _Vertices[i].transform.localScale = new Vector3(_NewSize, _NewSize, _NewSize);
                 }
                 _LastVertexSize = _VertexSize;
             }

@@ -122,6 +122,15 @@ public class EditMeshVertexAuxiliary : EditorWindow
         EditorGUILayout.EndHorizontal();
         #endregion
 
+        #region 取消编辑
+        EditorGUILayout.BeginHorizontal();
+        if (GUILayout.Button("取消编辑"))
+        {
+            EditorApplication.delayCall += CancelEditor;
+        }
+        EditorGUILayout.EndHorizontal();
+        #endregion
+
         #region 编辑完成
         EditorGUILayout.BeginHorizontal();
         if (GUILayout.Button("编辑完成"))
@@ -647,6 +656,24 @@ public class EditMeshVertexAuxiliary : EditorWindow
         #endregion
     }
     /// <summary>
+    /// 取消编辑
+    /// </summary>
+    void CancelEditor()
+    {
+        if (target != null && editMeshVertexSenior != null)
+        {
+            DestroyImmediate(editMeshVertexSenior);
+            editMeshVertexSenior = null;
+            target.GetComponent<MeshRenderer>().enabled = true;
+            //原来的物体留之无用，删掉
+            if (targetClone)
+            {
+                DestroyImmediate(targetClone);
+            }
+        }
+    }
+
+    /// <summary>
     /// 编辑完成
     /// </summary>
     void Finish()
@@ -655,6 +682,13 @@ public class EditMeshVertexAuxiliary : EditorWindow
         {
             DestroyImmediate(editMeshVertexSenior);
             editMeshVertexSenior = null;
+            //原来的物体留之无用，删掉
+            if (targetClone)
+            {
+                targetClone.transform.parent = null;
+                targetClone.name = target.name;
+                DestroyImmediate(target);
+            }
         }
     }
     /// <summary>
