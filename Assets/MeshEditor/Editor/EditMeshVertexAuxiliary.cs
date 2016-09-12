@@ -10,7 +10,7 @@ public class EditMeshVertexAuxiliary : EditorWindow
     [@MenuItem("Window/模型网格编辑辅助界面")]
     static void main()
     {
-        EditorWindow.GetWindow<EditMeshVertexAuxiliary>(false, "模型网格编辑器");
+        EditorWindow.GetWindowWithRect<EditMeshVertexAuxiliary>(new Rect(0,0,400,260),false, "模型网格编辑器");
     }
 
     public GameObject target;
@@ -26,36 +26,55 @@ public class EditMeshVertexAuxiliary : EditorWindow
     {
         scrollVec2 = EditorGUILayout.BeginScrollView(scrollVec2, GUILayout.Width(position.width), GUILayout.Height(position.height));
 
+        #region 打开网页
+        EditorGUILayout.BeginHorizontal("MeTransitionHead");
+        if (GUILayout.Button("访问CSDN博客", "toolbarbutton"))
+        {
+            Help.BrowseURL(@"http://blog.csdn.net/qq992817263/article/details/51579913");
+        }
+        if (GUILayout.Button("访问github项目", "toolbarbutton"))
+        {
+            Help.BrowseURL(@"https://github.com/coding2233/MeshEditor");
+        }
+        EditorGUILayout.EndHorizontal();
+        #endregion
+
         #region 当前编辑目标
-        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.BeginHorizontal("HelpBox");
         GUILayout.Label("当前编辑目标:");
         if (target != null)
         {
             targetName = target.name;
-            if (GUILayout.Button(targetName))
+            if (GUILayout.Button(targetName,GUILayout.Width(200)))
                 EditorApplication.delayCall += SelectTarget;
         }
         else
-            GUILayout.Label("无");
+        {
+            GUILayout.Label("无", "ErrorLabel");
+            GUILayout.FlexibleSpace();
+        }
         EditorGUILayout.EndHorizontal();
         #endregion
 
         #region 目标克隆体
-        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.BeginHorizontal("HelpBox");
         GUILayout.Label("目标克隆体:");
         if (targetClone != null)
         {
             targetCloneName = targetClone.name;
-            if (GUILayout.Button(targetCloneName))
+            if (GUILayout.Button(targetCloneName, GUILayout.Width(200)))
                 EditorApplication.delayCall += SelectTargetClone;
         }
         else
-            GUILayout.Label("无");
+        {
+            GUILayout.Label("无", "ErrorLabel");
+            GUILayout.FlexibleSpace();
+        }
         EditorGUILayout.EndHorizontal();
         #endregion
 
         #region 顶点大小
-        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.BeginHorizontal("HelpBox");
         GUILayout.Label("顶点大小:");
         if (target != null && editMeshVertexSenior != null)
         {
@@ -67,29 +86,35 @@ public class EditMeshVertexAuxiliary : EditorWindow
             }
         }
         else
-            GUILayout.Label("无");
+        {
+            GUILayout.Label("无", "ErrorLabel");
+            GUILayout.FlexibleSpace();
+        }
         EditorGUILayout.EndHorizontal();
         #endregion
 
         #region 顶点数量
-        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.BeginHorizontal("HelpBox");
         GUILayout.Label("顶点数量:");
         if (target != null && editMeshVertexSenior != null)
         {
             GUILayout.Label(editMeshVertexSenior._VertexNumber.ToString());
         }
         else
-            GUILayout.Label("无");
+        {
+            GUILayout.Label("无", "ErrorLabel");
+            GUILayout.FlexibleSpace();
+        }
         EditorGUILayout.EndHorizontal();
         #endregion
 
         #region 创建、删除
         EditorGUILayout.BeginHorizontal();
-        if (GUILayout.Button("创建顶点"))
+        if (GUILayout.Button("创建顶点", "LargeButtonLeft"))
         {
             EditorApplication.delayCall += AddVertex;
         }
-        if (GUILayout.Button("删除顶点"))
+        if (GUILayout.Button("删除顶点", "LargeButtonRight"))
         {
             EditorApplication.delayCall += DeleteVertex;
         }
@@ -98,11 +123,11 @@ public class EditMeshVertexAuxiliary : EditorWindow
 
         #region 相交、镜像
         EditorGUILayout.BeginHorizontal();
-        if (GUILayout.Button("相交位移"))
+        if (GUILayout.Button("相交位移", "LargeButtonLeft"))
         {
             EditorApplication.delayCall += IntersectionDisplacement;
         }
-        if (GUILayout.Button("镜像位移"))
+        if (GUILayout.Button("镜像位移", "LargeButtonRight"))
         {
             EditorApplication.delayCall += MirrorDisplacement;
         }
@@ -111,11 +136,11 @@ public class EditMeshVertexAuxiliary : EditorWindow
 
         #region 两点塌陷、多点塌陷
         EditorGUILayout.BeginHorizontal();
-        if (GUILayout.Button("两点塌陷"))
+        if (GUILayout.Button("两点塌陷", "LargeButtonLeft"))
         {
             EditorApplication.delayCall += CollapseOnTwoVertex;
         }
-        if (GUILayout.Button("多点塌陷"))
+        if (GUILayout.Button("多点塌陷", "LargeButtonRight"))
         {
             EditorApplication.delayCall += CollapseOnMoreVertex;
         }
@@ -124,7 +149,7 @@ public class EditMeshVertexAuxiliary : EditorWindow
 
         #region 取消编辑
         EditorGUILayout.BeginHorizontal();
-        if (GUILayout.Button("取消编辑"))
+        if (GUILayout.Button("取消编辑", "LargeButton"))
         {
             EditorApplication.delayCall += CancelEditor;
         }
@@ -133,7 +158,7 @@ public class EditMeshVertexAuxiliary : EditorWindow
 
         #region 编辑完成
         EditorGUILayout.BeginHorizontal();
-        if (GUILayout.Button("编辑完成"))
+        if (GUILayout.Button("编辑完成", "LargeButton"))
         {
             EditorApplication.delayCall += Finish;
         }
